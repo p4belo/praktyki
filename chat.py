@@ -8,8 +8,13 @@ API_URL = "https://openrouter.ai/api/v1/chat/completions"
 API_KEY = os.environ.get("klucz_api", "")
 MODEL = "x-ai/grok-4.1-fast:free"
 
+chat_history = []
+
+
 def send_message_to_api(user_text):
-    
+
+    chat_history.append({"role": "user", "content": user_text})
+
     response = requests.post(
         url=API_URL,
         headers={
@@ -18,39 +23,18 @@ def send_message_to_api(user_text):
         },
         data=json.dumps({
             "model": MODEL,
-            "messages": [{"role": "user", "content": user_text}],
+            "messages": chat_history,
             "extra_body": {"reasoning": {"enabled": True}}
         })
     )
+
     data = response.json()
     msg = data['choices'][0]['message']
+    bot_text = msg.get('content')
 
-    messages = [
-        {"role": "user", "content": user_text},
-        {
-            "role": "assistant",
-            "content": msg.get('content'),
-            "reasoning_details": msg.get('reasoning_details')
-        }
-    ]
+    chat_history.append({"role": "assistant", "content": bot_text})
 
-    response2 = requests.post(
-        url=API_URL,
-        headers={
-            "Authorization": "Bearer " + API_KEY,
-            "Content-Type": "application/json",
-        },
-        data=json.dumps({
-            "model": MODEL,
-            "messages": messages + [{"role": "user", "content": "Jesteś tego pewny? Pomyśl dokładnie jeszcze raz."}],
-            "extra_body": {"reasoning": {"enabled": True}}
-        })
-    )
-
-    data2 = response2.json()
-    final_msg = data2['choices'][0]['message']['content']
-
-    return final_msg
+    return bot_text
 
 
 root = tk.Tk()
@@ -81,16 +65,18 @@ def send_message():
     except Exception as e:
         bot_response = "Error: " + str(e)
 
-    chat_box.configure(state='normal') 
-    chat_box.insert(tk.END, f"Bot: {bot_response}\n\n") 
-    chat_box.configure(state='disabled') 
+    chat_box.configure(state='normal')
+    chat_box.insert(tk.END, f"Bot: {bot_response}\n\n")
+    chat_box.configure(state='disabled')
     chat_box.see(tk.END)
 
 
 def enter(event):
     send_message()
 
+
 root.bind("<Return>", enter)
+
 send_button = tk.Button(root, text="Wyślij", command=send_message, font=("Arial", 12))
 send_button.pack(pady=5)
 
