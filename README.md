@@ -1,2 +1,5 @@
 # praktyki
+<<<<<<< HEAD
 # praktyki
+=======
+>>>>>>> main
